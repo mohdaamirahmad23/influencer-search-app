@@ -1,15 +1,25 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import type { FullUserProfile, ProfileDetailResponse } from "@/types";
-import { formatEngagementRate } from "@/utils/formatters";
+import { formatEngagementRate, formatCount } from "@/utils/formatters";
 import { loadProfileByUsername } from "@/utils/profileLoader";
-
-function formatFollowersDetail(count: number) {
-  if (count >= 1000000) return (count / 1000000).toFixed(2) + "M";
-  if (count >= 1000) return (count / 1000).toFixed(1) + "K";
-  return String(count);
+import { useShortlistStore } from "@/store/useShortlistStore";
+function StatCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div
+      className="rounded-lg p-3 border"
+      style={{ borderColor: "var(--border)", background: "var(--bg-elevated)" }}
+    >
+      <div className="text-xs" style={{ color: "var(--text)" }}>
+        {label}
+      </div>
+      <div className="font-semibold mt-0.5" style={{ color: "var(--text-h)" }}>
+        {value}
+      </div>
+    </div>
+  );
 }
 
 export function ProfileDetailPage() {
@@ -20,10 +30,15 @@ export function ProfileDetailPage() {
     null
   );
   const [loaded, setLoaded] = useState(false);
+  const addProfile = useShortlistStore((s) => s.addProfile);
+  const removeProfile = useShortlistStore((s) => s.removeProfile);
+  const isShortlisted = useShortlistStore((s) =>
+    username ? s.isShortlisted(username, platform as never) : false
+  );
 
   useEffect(() => {
     if (!username) return;
-
+    setLoaded(false);
     loadProfileByUsername(username).then((data) => {
       setProfileData(data);
       setLoaded(true);
@@ -42,7 +57,7 @@ export function ProfileDetailPage() {
   if (!loaded) {
     return (
       <Layout title={`@${username}`}>
-        <p className="text-gray-400">Loading...</p>
+        <p style={{ color: "var(--text)" }}>Loading...</p>
       </Layout>
     );
   }
@@ -50,10 +65,10 @@ export function ProfileDetailPage() {
   if (!profileData) {
     return (
       <Layout title={`@${username}`}>
-        <p className="text-red-600 mb-4">
+        <p className="text-red-500 mb-4">
           Could not load profile details for {username}
         </p>
-        <Link to="/" className="text-blue-600 underline">
+        <Link to="/" style={{ color: "var(--accent)" }} className="underline">
           Back to search
         </Link>
       </Layout>
@@ -61,101 +76,90 @@ export function ProfileDetailPage() {
   }
 
   const user: FullUserProfile = profileData.data.user_profile;
+  const handleAddToList = () => {
+    if (isShortlisted) {
+      removeProfile(user.username, platform as never);
+    } else {
+      addProfile(user, platform as never);
+    }
+  };
 
   return (
-    <Layout title={user.fullname}>
-      <Link to="/" className="text-sm text-blue-600 mb-4 inline-block">
-        ← Back to search
+    <Layout>
+      <Link
+        to="/"
+        className="text-sm mb-6 inline-block hover:underline"
+        style={{ color: "var(--accent)" }}
+      >
+        &#8592; Back to search
       </Link>
 
-      <div className="flex gap-6 items-start text-left max-w-2xl mx-auto">
-        <img
-          src={user.picture}
-          className="w-24 h-24 rounded-full border"
-        />
-        <div className="flex-1">
-          <h2 className="text-xl font-bold">
-            @{user.username}
-            <VerifiedBadge verified={user.is_verified} />
-          </h2>
-          <p className="text-gray-600">{user.fullname}</p>
-          <p className="text-xs text-gray-400 mt-1">Platform: {platform}</p>
+      <div
+        className="rounded-2xl border p-6 sm:p-8"
+        style={{
+          borderColor: "var(--border)",
+          background: "var(--bg-elevated)",
+          boxShadow: "var(--shadow-md)",
+        }}
+      >
+        <div className="flex flex-col sm:flex-row gap-6 items-start">
+          <img
+            src={user.picture}
+            className="w-24 h-24 rounded-full object-cover shrink-0"
+            style={{ border: "2px solid var(--border)" }}
+          />
+          <div className="flex-1 text-left w-full">
+            <h2 className="text-xl font-bold flex items-center gap-1" style={{ color: "var(--text-h)" }}>
+              @{user.username}
+              <VerifiedBadge verified={user.is_verified} />
+            </h2>
+            <p style={{ color: "var(--text)" }}>{user.fullname}</p>
+            <p className="text-xs mt-1 capitalize" style={{ color: "var(--text)" }}>
+              Platform: {platform}
+            </p>
 
-          {user.description && (
-            <p className="mt-3 text-sm text-gray-700">{user.description}</p>
-          )}
+            {user.description && (
+              <p className="mt-3 text-sm" style={{ color: "var(--text)" }}>
+                {user.description}
+              </p>
+           )}
 
-          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div className="border p-2 rounded">
-              <div className="text-gray-500">Followers</div>
-              <div className="font-semibold">
-                {formatFollowersDetail(user.followers)}
-              </div>
+            <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+              <StatCard label="Followers" value={formatCount(user.followers)} />
+              <StatCard label="Engagement Rate" value={formatEngagementRate(user.engagement_rate)} />
+              {user.posts_count !== undefined && (
+                <StatCard label="Posts" value={user.posts_count} />
+              )}
+              {user.avg_likes !== undefined && (
+                <StatCard label="Avg Likes" value={formatCount(user.avg_likes)} />
+              )}
+              {user.avg_comments !== undefined && (
+                <StatCard label="Avg Comments" value={user.avg_comments} />
+              )}
+              {user.avg_views !== undefined && user.avg_views > 0 && (
+                <StatCard label="Avg Views" value={formatCount(user.avg_views)} />
+              )}
+              {user.engagements !== undefined && (
+                <StatCard label="Engagements" value={formatCount(user.engagements)} />
+              )}
             </div>
-            <div className="border p-2 rounded">
-              <div className="text-gray-500">Engagement Rate</div>
-              <div className="font-semibold">
-                {user.engagement_rate !== undefined
-                  ? (user.engagement_rate * 10000).toFixed(2) + "%"
-                  : "N/A"}
-              </div>
+
+            <div className="flex flex-wrap items-center gap-4 mt-6">
+              <button
+                onClick={handleAddToList}
+                className={isShortlisted ? "px-5 py-2.5 rounded-full text-sm font-medium bg-red-500/10 text-red-500 hover:bg-red-500/20" : "px-5 py-2.5 rounded-full text-sm font-medium text-white"}
+                style={!isShortlisted ? { background: "var(--accent)" } : undefined}
+              >
+                {isShortlisted ? "Remove from List" : "Add to List"}
+              </button>
+
+              {user.url && (
+                <a href={user.url} target="_blank" className="text-sm hover:underline" style={{ color: "var(--accent)" }}>
+                  View on platform &#8594;
+                </a>
+              )}
             </div>
-            {user.posts_count !== undefined && (
-              <div className="border p-2 rounded">
-                <div className="text-gray-500">Posts</div>
-                <div className="font-semibold">{user.posts_count}</div>
-              </div>
-            )}
-            {user.avg_likes !== undefined && (
-              <div className="border p-2 rounded">
-                <div className="text-gray-500">Avg Likes</div>
-                <div className="font-semibold">
-                  {formatFollowersDetail(user.avg_likes)}
-                </div>
-              </div>
-            )}
-            {user.avg_comments !== undefined && (
-              <div className="border p-2 rounded">
-                <div className="text-gray-500">Avg Comments</div>
-                <div className="font-semibold">{user.avg_comments}</div>
-              </div>
-            )}
-            {user.avg_views !== undefined && user.avg_views > 0 && (
-              <div className="border p-2 rounded">
-                <div className="text-gray-500">Avg Views</div>
-                <div className="font-semibold">
-                  {formatFollowersDetail(user.avg_views)}
-                </div>
-              </div>
-            )}
-            {user.engagements !== undefined && (
-              <div className="border p-2 rounded">
-                <div className="text-gray-500">Engagements</div>
-                <div className="font-semibold">
-                  {formatEngagementRate(user.engagement_rate)}
-                </div>
-              </div>
-            )}
           </div>
-
-          {user.url && (
-            <a
-              href={user.url}
-              target="_blank"
-              className="inline-block mt-4 text-blue-600 text-sm"
-            >
-              View on platform →
-            </a>
-          )}
-
-          {/* TODO: candidates must implement Add to List feature */}
-          {/* TODO: candidates must implement Add to List feature */}
-          <button
-            disabled
-            className="block mt-4 px-4 py-2 bg-gray-300 text-gray-500 rounded cursor-not-allowed"
-          >
-            Add to List
-          </button>
         </div>
       </div>
     </Layout>
