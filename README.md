@@ -1,6 +1,59 @@
-# Wobb Frontend Assignment
+# Influencer Search App — Wobb Vibe Coder Intern Assignment
 
-A starter influencer search application built with **React**, **TypeScript**, **Vite**, and **Tailwind CSS**. This project is intentionally left in a rough-but-working state for candidates to improve.
+A React + TypeScript + Vite + Tailwind CSS application to search and filter influencers across Instagram, YouTube, and TikTok, view detailed profiles, and maintain a shortlist of selected creators.
+
+## Tech Stack
+
+- React 19 + TypeScript
+- Vite
+- Tailwind CSS v4
+- Zustand (state management with persistence)
+- React Router
+
+## Features
+
+- Search and filter influencers by platform (Instagram / YouTube / TikTok)
+- Case-insensitive search by username or full name
+- Profile detail pages with engagement stats
+- "Add to List" shortlist feature with duplicate prevention (keyed by username + platform)
+- Shortlist persists across page refreshes via `localStorage`
+- Responsive layout (mobile to desktop)
+- Light/dark theme support via CSS custom properties (auto-switches with system preference)
+
+## Bugs Fixed
+
+The starting codebase had several intentional bugs, all of which were identified and fixed:
+
+1. **Dependency conflict**: Removed `react-beautiful-dnd`, which was causing a peer-dependency conflict with React 19 during `npm install`.
+2. **Case-sensitive search**: `filterProfiles` in `dataHelpers.ts` matched username search case-sensitively while fullname search was case-insensitive — made both consistent.
+3. **Swapped stats**: Engagement Rate and Engagements values were swapped on `ProfileDetailPage`.
+4. **Profile loading failure**: `profileLoader.ts` failed to load profile JSON files when filename casing didn't exactly match the username (e.g., `MrBeast6000.json`) — made the lookup case-insensitive.
+5. **Stale closure**: Removed a `clickCount` stale closure bug in `SearchPage`.
+6. **Encoding corruption**: Fixed mojibake — characters like ✓, ←, → were rendering as garbled text due to encoding issues.
+7. **Duplicate logic**: Consolidated three separate, duplicated `formatFollowers` implementations into a single shared utility in `utils/formatters.ts`.
+8. **Dead code**: Removed an unused `SearchBar.tsx` component that was never imported.
+9. **Unnecessary DOM attribute**: Removed a pointless `data-search` attribute from `ProfileCard`.
+10. **Non-responsive layout**: Fixed fixed-width `#root` (1126px) and `ProfileCard` (700px) elements that broke on smaller screens — converted to responsive, fluid layouts.
+11. **Dark mode visibility bug**: Fixed header text in `Layout.tsx` that was invisible in dark mode due to a hardcoded color.
+
+## Libraries Added
+
+- **Zustand** (`zustand`) — for shortlist state management with the `persist` middleware (backed by `localStorage`, key: `wobb-shortlist-storage`)
+
+## Assumptions & Trade-offs
+
+- The original codebase referenced a React Context-based approach for state management, but no working implementation was present. Zustand was used instead to implement the shortlist feature from scratch — chosen for its minimal boilerplate, built-in persistence middleware, and simpler API compared to Context + reducers for this scope of state.
+- Shortlist data is stored only in the browser's `localStorage`; there is no backend persistence or cross-device sync.
+- Sample data (`src/assets/data/`) is treated as static and read at build/runtime via `import.meta.glob`; no live API integration was assumed to be in scope.
+- Theming uses CSS custom properties with a `prefers-color-scheme` media query rather than a manual toggle, keeping the design system simple while still supporting both light and dark modes.
+
+## Remaining Improvements (Future Scope)
+
+- Add a manual light/dark theme toggle in addition to system-preference detection
+- Add pagination or infinite scroll for larger result sets (currently shows all matched profiles)
+- Add unit tests for `dataHelpers.ts` and the Zustand store
+- Add loading/error states for profile data fetching
+- Add sorting options (by followers, engagement rate, etc.) on the search page
 
 ## Getting Started
 
@@ -9,72 +62,20 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) to view the app.
+Build for production:
 
-## What's Included
+```bash
+npm run build
+```
 
-- **Search / Dashboard** — filter influencers by platform (Instagram, YouTube, TikTok) and search by username or full name
-- **Profile Details** — click a profile to view extended data loaded from individual JSON files
-- **Routing** — `react-router-dom` with `/` (search) and `/profile/:username` (details)
+## Project Structure
 
-Sample data lives in:
-
-- `src/assets/data/search/` — platform search results (10 profiles each)
-- `src/assets/data/profiles/` — detailed profile JSON per username
-
-## How to Submit
-
-1. **Download or clone** this starter project to your machine.
-2. **Create a new repository** on your own GitHub account. Do not fork the original assignment repo — push your work to a repo you own.
-3. Complete the tasks below and push your changes to that repository.
-4. **Share the public GitHub repository URL** with us as your submission.
-
-### Deadline (strict)
-
-- **Due:** **2 July 2026, 2:00 PM IST** (Indian Standard Time, UTC+5:30)
-- **Any git commits made after this deadline will disqualify your submission.** We will only consider the repository state as of the deadline; late commits will not be reviewed.
-- Make sure your final work is pushed **before** the cutoff.
-
-## AI Usage
-
-You may use any AI tools (Cursor, ChatGPT, Claude, GitHub Copilot, etc.). We are evaluating your final solution and engineering decisions.
-
-## Your Tasks
-
-Complete the following as part of your submission:
-
-1. **Find and fix all bugs and quality issues** — the codebase contains intentional bugs and quality issues. Identify and resolve them.
-
-2. **Completely redesign the UI/UX** — replace the basic layout with a polished, modern interface. Focus on usability, visual hierarchy, and delight.
-
-3. **Replace React Context with Zustand** — when you implement state management for the selected list, use [Zustand](https://github.com/pmndrs/zustand) instead of React Context.
-
-4. **Implement "Select profile & Add to List"** — the disabled "Add to List" button is a stub. Build the full feature:
-   - Select / add profiles to a persistent list
-   - View and manage the selected list
-   - Handle duplicates appropriately
-
-5. **Improve code quality and project structure** — refactor as needed, add proper types, and follow React best practices.
-
-6. **Optimize performance** — apply sensible optimizations where appropriate.
-
-7. **Use any libraries you need** — you are not limited to the current stack. Choose tools that help you deliver a great result (UI kits, state managers, testing libraries, etc.).
-
-## Scripts
-
-| Command        | Description              |
-| -------------- | ------------------------ |
-| `npm run dev`  | Start development server |
-| `npm run build`| Production build         |
-| `npm run lint` | Run ESLint               |
-
-## Submission Notes
-
-- Document any assumptions or trade-offs in your README
-- Ensure `npm run build` passes before submitting
-- Focus on demonstrating your judgment — not every possible feature needs to be built, but the core assignment items should be addressed thoughtfully
-- Double-check that your repo is public (or that we have access) and that the link is included in your submission
-- Please make meaningful commits throughout your work. We may review your commit history.
-- **Bonus:** Deploying the app (e.g. Vercel, Netlify, GitHub Pages) is optional but will be considered a plus — include the live URL in your submission if you do
-
-Good luck!
+```
+src/
+├── components/       # Reusable UI components (Layout, ProfileCard, PlatformFilter, etc.)
+├── pages/             # Route-level pages (SearchPage, ProfileDetailPage, ShortlistPage)
+├── store/             # Zustand store for shortlist state
+├── types/             # Shared TypeScript types
+├── utils/             # Data helpers, formatters, profile loader
+└── assets/data/       # Sample JSON data for search results and profiles
+```
