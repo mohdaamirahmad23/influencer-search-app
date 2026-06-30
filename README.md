@@ -46,6 +46,7 @@ The starting codebase had several intentional bugs, all of which were identified
 - Shortlist data is stored only in the browser's `localStorage`; there is no backend persistence or cross-device sync.
 - Sample data (`src/assets/data/`) is treated as static and read at build/runtime via `import.meta.glob`; no live API integration was assumed to be in scope.
 - Theming uses CSS custom properties with a `prefers-color-scheme` media query rather than a manual toggle, keeping the design system simple while still supporting both light and dark modes.
+- Sample profile detail data (`src/assets/data/profiles/`) only includes JSON files for a subset of creators (e.g., MrBeast, Cristiano Ronaldo, Khaby Lame, T-Series). Profiles without a matching detail JSON (e.g., Leo Messi) will show a "details not available" message on the profile page — this reflects the provided sample dataset, not a bug.
 
 ## Remaining Improvements (Future Scope)
 

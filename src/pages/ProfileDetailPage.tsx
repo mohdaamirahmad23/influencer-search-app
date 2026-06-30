@@ -65,12 +65,31 @@ export function ProfileDetailPage() {
   if (!profileData) {
     return (
       <Layout title={`@${username}`}>
-        <p className="text-red-500 mb-4">
-          Could not load profile details for {username}
-        </p>
-        <Link to="/" style={{ color: "var(--accent)" }} className="underline">
-          Back to search
-        </Link>
+        <div
+          className="rounded-2xl p-8 text-center max-w-md mx-auto mt-12"
+          style={{
+            background: "var(--bg-elevated)",
+            border: "1px solid var(--border)",
+            boxShadow: "var(--shadow)",
+          }}
+        >
+          <h2
+            className="text-lg font-semibold mb-2"
+            style={{ color: "var(--text-h)" }}
+          >
+            Details not available
+          </h2>
+          <p className="mb-6" style={{ color: "var(--text)" }}>
+            We don't have detailed profile data for @{username} yet.
+          </p>
+          <Link
+            to="/"
+            style={{ color: "var(--accent)" }}
+            className="underline font-medium"
+          >
+            &#8592; Back to search
+          </Link>
+        </div>
       </Layout>
     );
   }
